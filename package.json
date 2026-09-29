@@ -1,0 +1,15 @@
+{
+  "name": "zotero-journal-crawler",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Zotero plugin: downloads the articles of a list of open access journals into the library",
+  "license": "MIT",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.js",
+    "adapter": "node test/harness.mjs"
+  },
+  "devDependencies": {
+    "linkedom": "^0.18.13"
+  }
+}

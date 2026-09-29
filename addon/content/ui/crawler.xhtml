@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+<?xml-stylesheet href="chrome://global/skin/"?>
+<?xml-stylesheet href="chrome://zotero/skin/zotero.css" type="text/css"?>
+<?xml-stylesheet href="chrome://zotero-platform/content/zotero.css"?>
+<?xml-stylesheet href="chrome://journal-crawler/content/ui/crawler.css" type="text/css"?>
+<window
+	id="journal-crawler-window"
+	windowtype="zotero:journal-crawler"
+	title="Riviste – download articoli"
+	persist="screenX screenY width height sizemode"
+	width="1280"
+	height="820"
+	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+	xmlns:html="http://www.w3.org/1999/xhtml">
+
+	<script src="chrome://zotero/content/include.js"/>
+	<script src="chrome://journal-crawler/content/ui/crawler.js"/>
+
+	<keyset>
+		<key id="key_close" key="W" modifiers="accel" oncommand="window.close()"/>
+	</keyset>
+
+	<html:div id="app">
+		<html:header id="toolbar">
+			<html:button id="run-all" class="primary" title="Cerca e scarica i nuovi articoli di tutte le riviste attive">Aggiorna tutte</html:button>
+			<html:button id="run-selected" title="Cerca e scarica i nuovi articoli delle riviste selezionate">Aggiorna selezionate</html:button>
+			<html:button id="test-selected" title="Elenca cosa verrebbe scaricato, senza scaricare nulla">Prova</html:button>
+			<html:button id="stop" disabled="true">Interrompi</html:button>
+			<html:span class="sep"/>
+			<html:button id="add-journal">Aggiungi rivista…</html:button>
+			<html:button id="import-json" title="Aggiunge o aggiorna riviste (e i loro adapter) da un file JSON">Importa JSON…</html:button>
+			<html:button id="export-json" title="Salva l'elenco delle riviste, con parametri e adapter, in un file JSON">Esporta JSON…</html:button>
+			<html:span class="spacer"/>
+			<html:label class="setting" title="Articoli pubblicati prima di quest'anno non vengono scaricati (vale per le riviste senza un anno proprio). Vuoto = tutto l'archivio.">
+				Dal
+				<html:input id="since-year" type="number" min="1900" max="2100" placeholder="tutto"/>
+			</html:label>
+			<html:label class="setting" title="Collezione Zotero che contiene una sottocollezione per ogni rivista">
+				Collezione
+				<html:input id="collection-root" type="text"/>
+			</html:label>
+			<html:label class="setting" title="Riviste elaborate contemporaneamente">
+				In parallelo
+				<html:input id="parallel" type="number" min="1" max="8"/>
+			</html:label>
+		</html:header>
+
+		<html:div id="body">
+			<html:section id="list-pane">
+				<html:div class="list-tools">
+					<html:input id="filter" type="search" placeholder="Filtra riviste…"/>
+					<html:select id="filter-state">
+						<html:option value="all">Tutte</html:option>
+						<html:option value="enabled">Attive</html:option>
+						<html:option value="disabled">Disattivate</html:option>
+						<html:option value="errors">Con errori</html:option>
+					</html:select>
+					<html:span id="list-count"/>
+				</html:div>
+				<html:div class="table-wrap">
+					<html:table id="journals">
+						<html:thead>
+							<html:tr>
+								<html:th class="c-check"><html:input id="select-all" type="checkbox" title="Seleziona tutte (visibili)"/></html:th>
+								<html:th class="c-on" title="Attiva: inclusa in «Aggiorna tutte»">On</html:th>
+								<html:th data-sort="title">Rivista</html:th>
+								<html:th data-sort="adapter">Tipo</html:th>
+								<html:th data-sort="count" class="num" title="Articoli in libreria (aggiunti + già presenti)">Articoli</html:th>
+								<html:th data-sort="failed" class="num" title="Articoli non riusciti (ritentati alle prossime esecuzioni)">Falliti</html:th>
+								<html:th data-sort="lastRun">Ultimo aggiornamento</html:th>
+								<html:th>Stato</html:th>
+							</html:tr>
+						</html:thead>
+						<html:tbody id="journals-body"/>
+					</html:table>
+					<html:div id="list-empty" hidden="true">Nessuna rivista. Usa «Importa JSON…» per caricare un elenco, oppure «Aggiungi rivista…».</html:div>
+				</html:div>
+			</html:section>
+
+			<html:section id="detail-pane">
+				<html:div id="detail-empty">Seleziona una rivista per vederne la configurazione.</html:div>
+				<html:form id="detail" hidden="true">
+					<html:div class="row">
+						<html:label>Titolo<html:input id="d-title" type="text" required="required"/></html:label>
+					</html:div>
+					<html:div class="row">
+						<html:label>Sito<html:input id="d-url" type="url"/></html:label>
+						<html:button id="d-open-url" type="button" title="Apri il sito nel browser">↗</html:button>
+					</html:div>
+					<html:div class="row cols">
+						<html:label>Tipo (adapter)<html:select id="d-adapter"/></html:label>
+						<html:label>Dal (anno)<html:input id="d-since" type="number" min="1900" max="2100" placeholder="predefinito"/></html:label>
+						<html:label class="check"><html:input id="d-enabled" type="checkbox"/>Attiva</html:label>
+					</html:div>
+					<html:div id="d-adapter-help" class="help"/>
+					<html:label>Parametri (JSON)
+						<html:textarea id="d-params" rows="7" spellcheck="false"/>
+					</html:label>
+					<html:div id="d-params-error" class="error" hidden="true"/>
+					<html:label>Note
+						<html:textarea id="d-notes" rows="3"/>
+					</html:label>
+					<html:label>Istruzioni particolari (promemoria per te o per chi configura la rivista)
+						<html:textarea id="d-instructions" rows="2"/>
+					</html:label>
+					<html:div class="row buttons">
+						<html:button id="d-save" type="submit" class="primary">Salva</html:button>
+						<html:button id="d-detect" type="button" title="Riconosce la piattaforma del sito e propone tipo e parametri">Rileva automaticamente</html:button>
+						<html:button id="d-collection" type="button" title="Mostra la collezione della rivista in Zotero">Collezione</html:button>
+						<html:span class="spacer"/>
+						<html:button id="d-reset" type="button" title="Dimentica cosa è stato scaricato: la prossima esecuzione ricontrolla tutto l'archivio (i duplicati in libreria vengono comunque riconosciuti)">Dimentica download</html:button>
+						<html:button id="d-delete" type="button" class="danger">Elimina rivista</html:button>
+					</html:div>
+					<html:details id="d-survey-box">
+						<html:summary>Analisi del sito</html:summary>
+						<html:pre id="d-survey"/>
+					</html:details>
+					<html:div class="jc-tabs">
+						<html:button type="button" class="jc-tab selected" data-tab="articles">Articoli</html:button>
+						<html:button type="button" class="jc-tab" data-tab="runs">Esecuzioni</html:button>
+						<html:select id="articles-status">
+							<html:option value="">tutti</html:option>
+							<html:option value="added">aggiunti</html:option>
+							<html:option value="duplicate">già presenti</html:option>
+							<html:option value="nopdf">PDF in attesa</html:option>
+							<html:option value="error">errori</html:option>
+						</html:select>
+					</html:div>
+					<html:div id="tab-articles" class="tab-body"/>
+					<html:div id="tab-runs" class="tab-body" hidden="true"/>
+				</html:form>
+			</html:section>
+		</html:div>
+
+		<html:footer id="log-pane">
+			<html:div class="log-head">
+				<html:span id="run-summary">Pronto.</html:span>
+				<html:button id="clear-log" class="link">Pulisci</html:button>
+			</html:div>
+			<html:div id="log" tabindex="0"/>
+		</html:footer>
+	</html:div>
+</window>

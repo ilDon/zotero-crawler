@@ -42,7 +42,8 @@ var JCRunner = {
 
 	running: false,
 	cancelled: false,
-	status: new Map(), // journalId -> {state, found, added, duplicates, errors, current}
+	status: new Map(), // journalId -> {state, found, processed, added, duplicates, errors, current}
+	session: null, // the current or last run: {ids, dryRun, started, finished}
 	log: [], // recent lines, for the UI
 	_lastHit: new Map(), // host -> time of the last request
 	_hostQueue: new Map(), // host -> promise chain (one request at a time per host)
@@ -68,7 +69,7 @@ var JCRunner = {
 	},
 
 	_setStatus(journalId, patch) {
-		let s = this.status.get(journalId) || { state: 'idle', found: 0, added: 0, duplicates: 0, errors: 0, current: '' };
+		let s = this.status.get(journalId) || { state: 'idle', found: 0, processed: 0, added: 0, duplicates: 0, errors: 0, current: '' };
 		Object.assign(s, patch);
 		this.status.set(journalId, s);
 		JCEvents.emit('status', { journalId, status: s });
@@ -384,7 +385,7 @@ var JCRunner = {
 
 	async runJournal(journal, run) {
 		let adapter = JCAdapters.get(journal.adapter);
-		let counters = { found: 0, added: 0, duplicates: 0, errors: 0 };
+		let counters = { found: 0, processed: 0, added: 0, duplicates: 0, errors: 0 };
 		let lines = [];
 		let unsub = JCEvents.on('log', ({ line }) => {
 			if (line.includes(`[${journal.title}]`)) lines.push(line);
@@ -424,6 +425,7 @@ var JCRunner = {
 				if (!key || processed.has(key)) return;
 				processed.add(key);
 				counters.found++;
+				this._setStatus(journal.id, { found: counters.found });
 				if (run.dryRun) {
 					if (counters.found <= 3) await JCResolver.resolve(ctx, adapter, ref);
 					let m = ref.meta || {};
@@ -432,9 +434,12 @@ var JCRunner = {
 						let pdf = await JCResolver.fetchPdf(ctx, ref.pdfCandidates, ref.url);
 						ctx.log(pdf ? `PDF OK (${Math.round(pdf.bytes.length / 1024)} KB)` : 'PDF non scaricabile con richiesta semplice (in esecuzione reale si prova il browser nascosto)');
 					}
+					counters.processed++;
+					this._setStatus(journal.id, { ...counters });
 					return;
 				}
 				let r = await this.processRef(ctx, adapter, journal, ref, collection, run);
+				counters.processed++;
 				if (r === 'added') counters.added++;
 				else if (r === 'duplicate') counters.duplicates++;
 				else if (r === 'error' || r === 'nopdf') {
@@ -503,7 +508,8 @@ var JCRunner = {
 			let journals = opts.journalIds
 				? all.filter(j => opts.journalIds.includes(j.id))
 				: all.filter(j => j.enabled);
-			for (let j of journals) this._setStatus(j.id, { state: 'queued', found: 0, added: 0, duplicates: 0, errors: 0, current: '' });
+			this.session = { ids: journals.map(j => j.id), dryRun: !!opts.dryRun, started: Date.now(), finished: null };
+			for (let j of journals) this._setStatus(j.id, { state: 'queued', found: 0, processed: 0, added: 0, duplicates: 0, errors: 0, current: '' });
 			this._log(null, `${opts.dryRun ? 'Prova' : 'Avvio'}: ${journals.length} riviste`);
 			let queue = [...journals];
 			let parallel = Math.max(1, Math.min(8, +this.pref('parallel', 3)));
@@ -520,6 +526,7 @@ var JCRunner = {
 		}
 		finally {
 			this.running = false;
+			if (this.session) this.session.finished = Date.now();
 			JCEvents.emit('run', { running: false, totals });
 		}
 		return totals;

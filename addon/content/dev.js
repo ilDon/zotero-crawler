@@ -12,6 +12,7 @@ var JCDev = {
 	/** PNG of the plugin window (optionally with a journal selected), without touching the screen */
 	async screenshot(cfg) {
 		let win = Services.wm.getMostRecentWindow(JournalCrawlerPlugin.WINDOW_TYPE) || JournalCrawlerPlugin.openWindow();
+		if (cfg.windowSize) win.resizeTo(...cfg.windowSize);
 		await Zotero.Promise.delay(3000);
 		if (cfg.selectSlug && win.JCWindow) {
 			let j = win.JCWindow.journals.find(x => x.slug === cfg.selectSlug);
@@ -57,7 +58,18 @@ var JCDev = {
 			let ids = all.filter(j => !cfg.slugs || cfg.slugs.includes(j.slug)).map(j => j.id);
 			out.journalCount = all.length;
 			for (let pass = 1; pass <= (cfg.passes || 1); pass++) {
-				out['totals' + pass] = await JCRunner.run({ journalIds: ids, dryRun: !!cfg.dryRun });
+				let running = JCRunner.run({ journalIds: ids, dryRun: !!cfg.dryRun });
+				// screenshot of the window while the run is going on
+				if (pass === 1 && cfg.screenshotDuringMs) {
+					await Zotero.Promise.delay(cfg.screenshotDuringMs);
+					try {
+						await this.screenshot({ ...cfg, screenshot: cfg.screenshotDuring });
+					}
+					catch (e) {
+						out.screenshotError = String(e);
+					}
+				}
+				out['totals' + pass] = await running;
 			}
 			out.journals = [];
 			for (let j of (await JCStore.listJournals()).filter(j => ids.includes(j.id))) {

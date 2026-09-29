@@ -86,9 +86,11 @@
 						<html:label>Sito<html:input id="d-url" type="url"/></html:label>
 						<html:button id="d-open-url" type="button" title="Apri il sito nel browser">↗</html:button>
 					</html:div>
-					<html:div class="row cols">
+					<html:div class="row">
 						<html:label>Tipo (adapter)<html:select id="d-adapter"/></html:label>
-						<html:label>Dal (anno)<html:input id="d-since" type="number" min="1900" max="2100" placeholder="predefinito"/></html:label>
+					</html:div>
+					<html:div class="row">
+						<html:label class="since">Dal (anno)<html:input id="d-since" type="number" min="1900" max="2100" placeholder="predefinito"/></html:label>
 						<html:label class="check"><html:input id="d-enabled" type="checkbox"/>Attiva</html:label>
 					</html:div>
 					<html:div id="d-adapter-help" class="help"/>
@@ -131,12 +133,19 @@
 			</html:section>
 		</html:div>
 
-		<html:footer id="log-pane">
-			<html:div class="log-head">
-				<html:span id="run-summary">Pronto.</html:span>
-				<html:button id="clear-log" class="link">Pulisci</html:button>
-			</html:div>
-			<html:div id="log" tabindex="0"/>
+		<html:footer id="bottom">
+			<html:section id="status-pane">
+				<html:div id="run-summary" class="status-global">Pronto.</html:div>
+				<html:div id="run-progress" class="bar" hidden="true"><html:div id="run-progress-fill"/></html:div>
+				<html:div id="status-list"/>
+			</html:section>
+			<html:section id="log-pane">
+				<html:div class="log-head">
+					<html:span>Log</html:span>
+					<html:button id="clear-log" class="link">Pulisci</html:button>
+				</html:div>
+				<html:div id="log" tabindex="0"/>
+			</html:section>
 		</html:footer>
 	</html:div>
 </window>

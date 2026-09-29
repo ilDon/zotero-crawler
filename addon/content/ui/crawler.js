@@ -109,16 +109,17 @@ var JCWindow = {
 		this._unsub.push(events.on('log', entry => this.appendLog(entry)));
 		this._unsub.push(events.on('status', () => this.scheduleRender()));
 		this._unsub.push(events.on('journal-finished', () => this.reload()));
-		this._unsub.push(events.on('run', ({ running, totals }) => {
+		this._unsub.push(events.on('run', () => {
 			this.updateRunButtons();
-			if (!running && totals) this.$('run-summary').textContent = `Ultima esecuzione: ${totals.added} aggiunti, ${totals.duplicates} già presenti, ${totals.errors} non riusciti.`;
-			if (running) this.$('run-summary').textContent = 'In esecuzione…';
+			this.renderStatus();
 		}));
 		window.addEventListener('unload', () => this._unsub.forEach(fn => fn()));
 
 		for (let entry of runner.log.slice(-500)) this.appendLog(entry);
 		this.updateRunButtons();
 		await this.reload();
+		// the window may be opened while a run is going on
+		this.renderStatus();
 	},
 
 	renderAdapterOptions() {
@@ -150,7 +151,57 @@ var JCWindow = {
 		this._renderTimer = setTimeout(() => {
 			this._renderTimer = null;
 			this.renderList();
+			this.renderStatus();
 		}, 300);
+	},
+
+	STATE_LABELS: { queued: 'in coda', running: 'in corso', done: 'fatto', error: 'errore', cancelled: 'interrotta', idle: 'non eseguita' },
+
+	/** Bottom-left pane: the run as a whole, then one line per journal of the run */
+	renderStatus() {
+		let { runner } = this.api;
+		let session = runner.session;
+		if (!session) return;
+		let rows = session.ids.map((id) => {
+			let j = this.journals.find(x => x.id === id);
+			return { id, title: j ? j.title : String(id), s: runner.status.get(id) || { state: 'queued' } };
+		});
+		let sum = k => rows.reduce((n, r) => n + (r.s[k] || 0), 0);
+		let found = sum('found'), processed = sum('processed');
+		let finished = rows.filter(r => !['queued', 'running'].includes(r.s.state)).length;
+		let what = session.dryRun ? 'Prova' : 'Aggiornamento';
+		let head = runner.running
+			? `${what} in corso`
+			: `${what} ${runner.cancelled ? 'interrotto' : 'concluso'} alle ${new Date(session.finished || Date.now()).toLocaleTimeString()}`;
+		this.$('run-summary').textContent = `${head} · riviste ${finished}/${rows.length} · articoli ${processed}/${found}`
+			+ (session.dryRun ? '' : ` · ${sum('added')} aggiunti · ${sum('duplicates')} già presenti · ${sum('errors')} non riusciti`);
+		let bar = this.$('run-progress');
+		bar.hidden = !runner.running;
+		// articles found so far keep growing: the bar also counts finished journals
+		let frac = rows.length ? (finished + rows.filter(r => r.s.state === 'running')
+			.reduce((n, r) => n + (r.s.found ? r.s.processed / r.s.found : 0), 0)) / rows.length : 0;
+		this.$('run-progress-fill').style.width = `${Math.round(Math.min(1, frac) * 100)}%`;
+
+		let order = { running: 0, queued: 2 };
+		rows.sort((a, b) => (order[a.s.state] ?? 1) - (order[b.s.state] ?? 1));
+		let list = this.$('status-list');
+		list.textContent = '';
+		for (let r of rows) {
+			let s = r.s;
+			let counts = s.state === 'queued' ? this.STATE_LABELS.queued
+				: `${s.processed || 0}/${s.found || 0}` + (session.dryRun ? '' : ` · +${s.added || 0}`
+					+ (s.duplicates ? ` · ${s.duplicates} presenti` : '') + (s.errors ? ` · ${s.errors} falliti` : ''));
+			let detail = s.state === 'running' ? (s.current || 'ricerca articoli…')
+				: s.state === 'queued' ? '' : this.STATE_LABELS[s.state] || s.state;
+			list.append(this.el('div', {
+				class: 'st-row ' + s.state,
+				title: `${r.title} — ${this.STATE_LABELS[s.state] || s.state}`,
+				onclick: () => this.select(r.id),
+			},
+			this.el('span', { class: 'st-title' }, r.title),
+			this.el('span', { class: 'st-count' }, counts),
+			this.el('span', { class: 'st-current' }, detail)));
+		}
 	},
 
 	selection() {

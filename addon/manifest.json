@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Journal Crawler",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Downloads the articles of a list of open access journals (PDF and metadata) into the Zotero library, incrementally.",
   "author": "Gherardo Carullo",
   "homepage_url": "https://github.com/ilDon/zotero-crawler",

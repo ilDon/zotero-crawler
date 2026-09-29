@@ -1,4 +1,4 @@
-/* global Zotero, IOUtils, PathUtils, JCUtil */
+/* global Zotero, IOUtils, PathUtils, JCUtil, JCStore */
 /* exported JCImporter */
 
 /**
@@ -11,7 +11,7 @@ var JCImporter = {
 	},
 
 	get rootCollectionName() {
-		return Zotero.Prefs.get('extensions.journal-crawler.collectionRoot', true) || 'Riviste';
+		return JCStore.getSetting('collectionRoot') || 'Riviste';
 	},
 
 	// ---- collections ----
@@ -145,7 +145,7 @@ var JCImporter = {
 			return out;
 		});
 		if (creators.length) item.setCreators(creators);
-		let tag = Zotero.Prefs.get('extensions.journal-crawler.tag', true);
+		let tag = JCStore.getSetting('tag');
 		if (tag) item.addTag(tag, 1);
 		if (collection) item.addToCollection(collection.id);
 		await item.saveTx();

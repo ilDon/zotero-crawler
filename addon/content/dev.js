@@ -46,7 +46,7 @@ var JCDev = {
 			if (cfg.importFile) {
 				out.import = await JCConfig.import(JCConfig.parse(await IOUtils.readUTF8(cfg.importFile)));
 			}
-			if (cfg.since !== undefined) Zotero.Prefs.set('extensions.journal-crawler.defaultSinceYear', cfg.since, true);
+			if (cfg.since !== undefined) await JCStore.setSetting('defaultSinceYear', cfg.since);
 			if (cfg.limitPerJournal) Zotero.Prefs.set('extensions.journal-crawler.devLimit', cfg.limitPerJournal, true);
 			if (cfg.openWindow) JournalCrawlerPlugin.openWindow();
 			let all = await JCStore.listJournals();
@@ -93,6 +93,7 @@ var JCDev = {
 		}
 		out.collections = Zotero.Collections.getByLibrary(Zotero.Libraries.userLibraryID, true)
 			.map(c => (c.parentID ? Zotero.Collections.get(c.parentID).name + ' / ' : '') + c.name);
+		out.settings = Object.fromEntries(Object.keys(JCStore.SETTINGS).map(k => [k, JCStore.getSetting(k)]));
 		out.log = JCRunner.log.map(l => l.line);
 		if (cfg.screenshot) {
 			try {

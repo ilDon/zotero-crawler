@@ -10,10 +10,21 @@
  *             found again in a later run is skipped without visiting it
  *   issues    issues whose articles were all processed (skipped by the adapters)
  *   runs      history of runs, with counters and log
- *   jc_meta   plugin state
+ *   jc_meta   plugin state and global settings (setting.<name>, JSON values)
  */
 var JCStore = {
 	FILE: 'journal-crawler.sqlite',
+	// global settings, kept in the database so that they follow it (e.g. a synced data directory)
+	SETTINGS: {
+		defaultSinceYear: 2024,
+		collectionRoot: 'Riviste',
+		parallel: 3,
+		delayMs: 1000,
+		tag: '',
+		importWithoutPdf: false,
+		browserFallback: true,
+	},
+	_settings: {},
 	MAX_ATTEMPTS: 3,
 	// articles found without PDF are checked again for this long (the PDF may come later)
 	PDF_WAIT_DAYS: 60,
@@ -31,6 +42,7 @@ var JCStore = {
 			const { Sqlite } = ChromeUtils.importESModule('resource://gre/modules/Sqlite.sys.mjs');
 			let conn = await Sqlite.openConnection({ path: this.path });
 			await this._createTables(conn);
+			await this._loadSettings(conn);
 			this._conn = conn;
 			return conn;
 		})();
@@ -108,6 +120,27 @@ var JCStore = {
 			errors INTEGER DEFAULT 0,
 			log TEXT)`);
 		await conn.execute('CREATE TABLE IF NOT EXISTS jc_meta (key TEXT PRIMARY KEY, value TEXT)');
+	},
+
+	async _loadSettings(conn) {
+		let rows = await conn.execute('SELECT key, value FROM jc_meta WHERE key LIKE ?', ['setting.%']);
+		this._settings = {};
+		for (let r of rows) {
+			try {
+				this._settings[r.getResultByIndex(0).slice(8)] = JSON.parse(r.getResultByIndex(1));
+			}
+			catch (e) {}
+		}
+	},
+
+	/** A global setting (synchronous: loaded when the database is opened) */
+	getSetting(name) {
+		return name in this._settings ? this._settings[name] : this.SETTINGS[name];
+	},
+
+	async setSetting(name, value) {
+		this._settings[name] = value;
+		await this.setMeta('setting.' + name, JSON.stringify(value));
 	},
 
 	now() {

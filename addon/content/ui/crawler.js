@@ -125,7 +125,7 @@ var JCWindow = {
 	},
 
 	setPref(name, value) {
-		Zotero.Prefs.set('extensions.journal-crawler.' + name, value, true);
+		this.api.store.setSetting(name, value).catch(e => Zotero.logError(e));
 	},
 
 	async reload() {

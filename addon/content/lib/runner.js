@@ -47,8 +47,9 @@ var JCRunner = {
 	_lastHit: new Map(), // host -> time of the last request
 	_hostQueue: new Map(), // host -> promise chain (one request at a time per host)
 
+	/** Global setting (see JCStore.SETTINGS); devLimit is a Zotero pref used only by tests */
 	pref(name, def) {
-		let v = Zotero.Prefs.get(this.PREF + name, true);
+		let v = name === 'devLimit' ? Zotero.Prefs.get(this.PREF + name, true) : JCStore.getSetting(name);
 		return v === undefined || v === null || v === '' ? def : v;
 	},
 

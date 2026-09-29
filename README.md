@@ -50,7 +50,9 @@ year): an existing item is only added to the journal's collection, and gets the 
 none.
 
 Every article met is recorded in the plugin's own database (`journal-crawler.sqlite`, next to
-`zotero.sqlite`), so a later run never visits it again. Adapters also keep cursors: OAI-PMH and
+`zotero.sqlite`), so a later run never visits it again. The same database holds the journal
+list and the settings of the window: a Zotero data directory copied or synced to another
+computer brings them along (the plugin itself is installed per Zotero profile). Adapters also keep cursors: OAI-PMH and
 Crossref are asked only for records changed since the last run, WordPress for posts after the
 last one seen, and issue-based sites skip issues already completed. Articles whose PDF is not
 available yet (some journals publish it later) are checked again in the following runs for a

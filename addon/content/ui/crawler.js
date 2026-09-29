@@ -6,8 +6,10 @@
  */
 var JCWindow = {
 	journals: [],
-	selectedId: null,
-	checked: new Set(),
+	selectedId: null, // the journal shown in the editor
+	selected: new Set(), // the journals the "selezionate" buttons act on
+	_anchor: null, // start of a shift-click range
+	_rowOrder: [],
 	sort: { key: 'title', dir: 1 },
 	_unsub: [],
 
@@ -57,9 +59,14 @@ var JCWindow = {
 		this.$('export-json').addEventListener('click', () => this.exportJSON());
 		this.$('filter').addEventListener('input', () => this.renderList());
 		this.$('filter-state').addEventListener('change', () => this.renderList());
-		this.$('select-all').addEventListener('change', (e) => {
-			for (let j of this.visibleJournals()) e.target.checked ? this.checked.add(j.id) : this.checked.delete(j.id);
-			this.renderList();
+		this.$('toggle-all-on').addEventListener('change', e => this.setAllEnabled(e.target.checked));
+		// ⌘A / Ctrl+A in the list: select every listed journal
+		this.$('journals').parentElement.addEventListener('keydown', (e) => {
+			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+				e.preventDefault();
+				this.selected = new Set(this._rowOrder);
+				this.renderList();
+			}
 		});
 		for (let th of document.querySelectorAll('#journals th[data-sort]')) {
 			th.addEventListener('click', () => {
@@ -147,9 +154,37 @@ var JCWindow = {
 	},
 
 	selection() {
-		let ids = [...this.checked];
+		let ids = [...this.selected].filter(id => this.journals.some(j => j.id === id));
 		if (!ids.length && this.selectedId) ids = [this.selectedId];
 		return ids;
+	},
+
+	/** Row click: plain, ⌘/Ctrl (toggle) or ⇧ (range), as in Zotero's lists */
+	clickRow(id, e) {
+		if (e.shiftKey && this._anchor != null && this._rowOrder.includes(this._anchor)) {
+			let a = this._rowOrder.indexOf(this._anchor), b = this._rowOrder.indexOf(id);
+			this.selected = new Set(this._rowOrder.slice(Math.min(a, b), Math.max(a, b) + 1));
+		}
+		else if (e.metaKey || e.ctrlKey) {
+			this.selected.has(id) ? this.selected.delete(id) : this.selected.add(id);
+			this._anchor = id;
+			if (!this.selected.has(id)) {
+				this.renderList();
+				return;
+			}
+		}
+		else {
+			this.selected = new Set([id]);
+			this._anchor = id;
+		}
+		this.select(id, { keepSelection: true });
+	},
+
+	/** Enable or disable every listed journal */
+	async setAllEnabled(enabled) {
+		let rows = this.visibleJournals().filter(j => j.enabled !== enabled);
+		for (let j of rows) await this.api.store.setJournalFields(j.id, { enabled });
+		await this.reload();
 	},
 
 	visibleJournals() {
@@ -199,17 +234,12 @@ var JCWindow = {
 				stateClass = 'ok';
 			}
 			let tr = this.el('tr', {
-				class: [j.id === this.selectedId ? 'selected' : '', j.enabled ? '' : 'disabled'].join(' '),
+				class: [this.selected.has(j.id) ? 'selected' : '', j.id === this.selectedId ? 'current' : '', j.enabled ? '' : 'disabled'].join(' '),
 				onclick: (e) => {
-					if (e.target.tagName === 'INPUT' || e.target.tagName === 'input') return;
-					this.select(j.id);
+					if (String(e.target.localName).toLowerCase() === 'input') return;
+					this.clickRow(j.id, e);
 				},
 			},
-			this.el('td', { class: 'c-check' }, this.el('input', {
-				type: 'checkbox',
-				checked: this.checked.has(j.id),
-				onchange: e => (e.target.checked ? this.checked.add(j.id) : this.checked.delete(j.id)),
-			})),
 			this.el('td', { class: 'c-on' }, this.el('input', {
 				type: 'checkbox',
 				checked: j.enabled,
@@ -227,15 +257,28 @@ var JCWindow = {
 			this.el('td', { class: 'c-state ' + stateClass, title: stateText }, stateText));
 			body.append(tr);
 		}
+		this._rowOrder = rows.map(j => j.id);
 		this.$('list-empty').hidden = this.journals.length > 0;
 		let enabled = this.journals.filter(j => j.enabled).length;
 		this.$('list-count').textContent = `${rows.length} di ${this.journals.length} (${enabled} attive)`;
+		// header checkbox: all listed journals enabled / some / none
+		let on = rows.filter(j => j.enabled).length;
+		let all = this.$('toggle-all-on');
+		all.checked = rows.length > 0 && on === rows.length;
+		all.indeterminate = on > 0 && on < rows.length;
+		let n = this.selection().length;
+		this.$('run-selected').textContent = n > 1 ? `Aggiorna selezionate (${n})` : 'Aggiorna selezionata';
+		this.$('test-selected').textContent = n > 1 ? `Prova (${n})` : 'Prova';
 	},
 
-	select(id) {
+	select(id, { keepSelection = false } = {}) {
 		if (this._dirty && id !== this.selectedId && !Services.prompt.confirm(window, 'Modifiche non salvate', 'Abbandonare le modifiche alla rivista?')) return;
 		this._dirty = false;
 		this.selectedId = id;
+		if (!keepSelection) {
+			this.selected = new Set(id ? [id] : []);
+			this._anchor = id;
+		}
 		this.renderList();
 		let j = this.journals.find(x => x.id === id);
 		this.$('detail').hidden = !j;
@@ -383,7 +426,16 @@ var JCWindow = {
 	},
 
 	async exportJSON() {
-		let ids = this.checked.size ? [...this.checked] : null;
+		let ids = null;
+		let sel = this.selection();
+		if (sel.length > 1) {
+			let ps = Services.prompt;
+			let choice = ps.confirmEx(window, 'Esporta JSON', `Esportare le ${sel.length} riviste selezionate o tutte le riviste?`,
+				ps.BUTTON_POS_0 * ps.BUTTON_TITLE_IS_STRING + ps.BUTTON_POS_1 * ps.BUTTON_TITLE_CANCEL + ps.BUTTON_POS_2 * ps.BUTTON_TITLE_IS_STRING,
+				`Selezionate (${sel.length})`, null, `Tutte (${this.journals.length})`, null, {});
+			if (choice === 1) return;
+			if (choice === 0) ids = sel;
+		}
 		let path = await this._pickFile('save', ids ? `Esporta ${ids.length} riviste selezionate` : 'Esporta tutte le riviste', 'riviste.json');
 		if (!path) return;
 		if (!path.endsWith('.json')) path += '.json';
@@ -440,7 +492,7 @@ var JCWindow = {
 		if (!Services.prompt.confirm(window, 'Elimina rivista', `Eliminare «${j.title}» dall'elenco? Gli articoli già in Zotero restano.`)) return;
 		await this.api.store.deleteJournal(j.id);
 		this._dirty = false;
-		this.checked.delete(j.id);
+		this.selected.delete(j.id);
 		this.select(null);
 		await this.reload();
 	},
@@ -545,7 +597,7 @@ var JCWindow = {
 
 	async run(opts) {
 		if (opts.journalIds && !opts.journalIds.length) {
-			Services.prompt.alert(window, 'Riviste', 'Seleziona almeno una rivista (casella a sinistra o clic sulla riga).');
+			Services.prompt.alert(window, 'Riviste', 'Seleziona almeno una rivista nell\'elenco (clic sulla riga; ⌘-clic o ⇧-clic per più riviste, ⌘A per tutte).');
 			return;
 		}
 		if (opts.dryRun && opts.journalIds.length > 5

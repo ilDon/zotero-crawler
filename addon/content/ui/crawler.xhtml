@@ -23,8 +23,8 @@
 	<html:div id="app">
 		<html:header id="toolbar">
 			<html:button id="run-all" class="primary" title="Cerca e scarica i nuovi articoli di tutte le riviste attive">Aggiorna tutte</html:button>
-			<html:button id="run-selected" title="Cerca e scarica i nuovi articoli delle riviste selezionate">Aggiorna selezionate</html:button>
-			<html:button id="test-selected" title="Elenca cosa verrebbe scaricato, senza scaricare nulla">Prova</html:button>
+			<html:button id="run-selected" title="Cerca e scarica i nuovi articoli delle riviste selezionate (clic, ⌘-clic, ⇧-clic, ⌘A nell'elenco)">Aggiorna selezionate</html:button>
+			<html:button id="test-selected" title="Elenca cosa verrebbe scaricato dalle riviste selezionate, senza scaricare nulla">Prova</html:button>
 			<html:button id="stop" disabled="true">Interrompi</html:button>
 			<html:span class="sep"/>
 			<html:button id="add-journal">Aggiungi rivista…</html:button>
@@ -57,12 +57,11 @@
 					</html:select>
 					<html:span id="list-count"/>
 				</html:div>
-				<html:div class="table-wrap">
+				<html:div class="table-wrap" tabindex="0">
 					<html:table id="journals">
 						<html:thead>
 							<html:tr>
-								<html:th class="c-check"><html:input id="select-all" type="checkbox" title="Seleziona tutte (visibili)"/></html:th>
-								<html:th class="c-on" title="Attiva: inclusa in «Aggiorna tutte»">On</html:th>
+								<html:th class="c-on" title="Attiva: la rivista è inclusa in «Aggiorna tutte». La casella qui attiva o disattiva tutte le riviste elencate (vale il filtro)."><html:label class="on-all"><html:input id="toggle-all-on" type="checkbox"/>On</html:label></html:th>
 								<html:th data-sort="title">Rivista</html:th>
 								<html:th data-sort="adapter">Tipo</html:th>
 								<html:th data-sort="count" class="num" title="Articoli in libreria (aggiunti + già presenti)">Articoli</html:th>

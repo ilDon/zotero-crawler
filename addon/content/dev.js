@@ -16,6 +16,10 @@ var JCDev = {
 		if (cfg.selectSlug && win.JCWindow) {
 			let j = win.JCWindow.journals.find(x => x.slug === cfg.selectSlug);
 			if (j) win.JCWindow.select(j.id);
+			if (cfg.selectSlugs) {
+				win.JCWindow.selected = new Set(win.JCWindow.journals.filter(x => cfg.selectSlugs.includes(x.slug)).map(x => x.id));
+				win.JCWindow.renderList();
+			}
 			await Zotero.Promise.delay(1500);
 		}
 		if (cfg.screenshotMain) win = Zotero.getMainWindow();

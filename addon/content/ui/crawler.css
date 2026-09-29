@@ -169,8 +169,20 @@ table {
 	color: var(--jc-warn);
 }
 
-.c-check, .c-on {
+.c-on {
 	width: 1.5em;
+}
+
+#journals tbody tr {
+	user-select: none;
+}
+
+.table-wrap:focus {
+	outline: none;
+}
+
+#journals tr.current td.c-title {
+	font-weight: 600;
 }
 
 .c-adapter, .c-date {
@@ -393,4 +405,11 @@ details.run pre {
 	color: var(--jc-muted);
 	padding: 2em 1em;
 	text-align: center;
+}
+
+.on-all {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	white-space: nowrap;
 }

@@ -22,7 +22,7 @@ installed automatically.
 
 ## Use
 
-Open the journals window from the button next to the search box of the items list, or from
+Open the journals window from the button in the items toolbar (after the new note button), or from
 *Tools → Riviste: scarica articoli…*.
 
 - **Importa JSON…** loads a list of journals with their settings, for instance one exported

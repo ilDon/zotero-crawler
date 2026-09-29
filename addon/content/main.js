@@ -81,11 +81,12 @@ var JournalCrawlerPlugin = {
 		this._addToolbarButton(win.document);
 	},
 
-	/** Button in the items toolbar, before the search box (and other plugins' buttons there) */
+	/** Button in the items toolbar, after Zotero's new item / lookup / attachment / note buttons */
 	_addToolbarButton(doc) {
 		if (doc.getElementById('jcrawler-tb-button')) return;
+		let note = doc.getElementById('zotero-tb-note-add');
 		let search = doc.getElementById('zotero-tb-search');
-		if (!search || !search.parentElement) return;
+		if (!note && !search) return;
 		let button = doc.createXULElement('toolbarbutton');
 		button.id = 'jcrawler-tb-button';
 		button.className = 'zotero-tb-button';
@@ -96,11 +97,8 @@ var JournalCrawlerPlugin = {
 		button.style.fill = 'var(--fill-secondary)';
 		button.style.setProperty('-moz-context-properties', 'fill, fill-opacity');
 		button.addEventListener('command', () => this.openWindow());
-		let before = search;
-		if (before.previousElementSibling && before.previousElementSibling.id === 'zotero-tb-search-spinner') {
-			before = before.previousElementSibling;
-		}
-		search.parentElement.insertBefore(button, before);
+		if (note) note.after(button);
+		else search.parentElement.insertBefore(button, search);
 	},
 
 	onMainWindowUnload(win) {

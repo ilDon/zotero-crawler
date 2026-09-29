@@ -310,6 +310,30 @@ var JCUtil = {
 		return { meta, pdfUrl, hasScholarly };
 	},
 
+	/** Zotero fields from CSL-JSON (DOI content negotiation: Crossref, DataCite, mEDRA) */
+	cslToMeta(csl) {
+		let meta = {};
+		if (!csl) return meta;
+		if (csl.title) meta.title = this.cleanTitle(Array.isArray(csl.title) ? csl.title[0] : csl.title);
+		meta.creators = (csl.author || []).map(a => (a.family
+			? { firstName: a.given || '', lastName: a.family, creatorType: 'author' }
+			: a.literal ? this.parseName(a.literal) : null)).filter(Boolean);
+		let parts = csl.issued && csl.issued['date-parts'] && csl.issued['date-parts'][0];
+		if (parts && parts[0]) meta.date = parts.map((n, i) => (i ? String(n).padStart(2, '0') : String(n))).join('-');
+		let set = (field, v) => {
+			if (v) meta[field] = String(Array.isArray(v) ? v[0] : v);
+		};
+		set('publicationTitle', csl['container-title']);
+		set('volume', csl.volume);
+		set('issue', csl.issue);
+		set('pages', csl.page);
+		set('DOI', csl.DOI);
+		set('ISSN', csl.ISSN);
+		set('language', csl.language);
+		if (csl.abstract && csl.abstract.length > 120) meta.abstractNote = this.stripTags(csl.abstract);
+		return meta;
+	},
+
 	/** Links in a document whose href (or text) looks like a PDF */
 	pdfLinks(doc, base, root = doc) {
 		let out = [];

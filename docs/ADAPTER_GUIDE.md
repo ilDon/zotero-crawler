@@ -56,7 +56,8 @@ would end up in Zotero: check titles, authors (first/last name split), date, vol
 | `htmlToPdf: true` | when an article has no PDF, print its web page to PDF (HTML-only journals); a ref can also set `htmlToPdf: true` |
 | `landingPdfSelector` | CSS selector of the PDF link on the article page, when the list/API gives none |
 | `doiSelector` | CSS selector of the element showing the DOI on the article page (a doi.org link or text) |
-| `pdfUrlTemplate` | PDF address built from the DOI: `{doi}`, or `{doi_}` with `/` replaced by `_` |
+| `pdfUrlTemplate` | PDF address built from the DOI: `{doi}`, or `{doi_}` with `/` replaced by `_`; also read backwards, to get the DOI from a PDF address (e.g. a list of PDF files) |
+| `doiMeta: true` | take title, authors, date and article page from the metadata registered with the DOI (doi.org content negotiation: Crossref, DataCite, mEDRA) |
 | `pdfWaitDays` | days an article without PDF is checked again (default 60), for journals that publish the PDF later |
 | `contentSelector` | where to look for a PDF link on the article page (default: article, main, .entry-content…) |
 | `browser: true` | render pages in Zotero's hidden browser (bot checks, JavaScript sites) |

@@ -22,6 +22,26 @@ var JCResolver = {
 		ref.meta = ref.meta || {};
 		if (adapter && adapter.resolve) await adapter.resolve(ctx, ref);
 		let cands = [...(ref.pdfUrls || []), ref.pdfUrl].filter(Boolean);
+		let p = ctx.params;
+		// params.pdfUrlTemplate also works backwards: the DOI from the PDF address
+		if (!ref.meta.DOI && p.pdfUrlTemplate && cands.length) {
+			let re = new RegExp('^' + p.pdfUrlTemplate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+				.replace('\\{doi_\\}', '([^/?#]+)').replace('\\{doi\\}', '(.+)') + '$');
+			let m = re.exec(cands[0]);
+			if (m) ref.meta.DOI = decodeURIComponent(p.pdfUrlTemplate.includes('{doi_}') ? m[1].replace(/_/g, '/') : m[1]);
+		}
+		// params.doiMeta: metadata registered with the DOI (title, authors, date, article page)
+		if (p.doiMeta && ref.meta.DOI && !ref.doiMeta) {
+			try {
+				let csl = await ctx.getJSON('https://doi.org/' + encodeURI(ref.meta.DOI), { headers: { Accept: 'application/vnd.citationstyles.csl+json' } });
+				ref.meta = JCUtil.mergeMeta(JCUtil.cslToMeta(csl), ref.meta);
+				if (!ref.url && csl.URL && !/doi\.org/.test(csl.URL)) ref.url = csl.URL;
+				ref.doiMeta = true;
+			}
+			catch (e) {
+				ctx.warn(`metadati DOI ${ref.meta.DOI}: ${e.message}`);
+			}
+		}
 		let needLanding = ref.url && ref.landing !== false
 			&& (ref.landing || !ref.meta.title || !cands.length);
 		if (needLanding) {

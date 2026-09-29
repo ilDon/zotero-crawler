@@ -117,7 +117,9 @@ var JournalCrawlerPlugin = {
 			existing.focus();
 			return existing;
 		}
-		return Zotero.getMainWindow().openDialog(this.WINDOW_URL, '', 'chrome,resizable,centerscreen,dialog=no');
+		// versioned URL: Zotero keeps chrome files cached across plugin updates
+		let url = this.WINDOW_URL + '?v=' + encodeURIComponent(this.version);
+		return Zotero.getMainWindow().openDialog(url, '', 'chrome,resizable,centerscreen,dialog=no');
 	},
 
 	async shutdown() {

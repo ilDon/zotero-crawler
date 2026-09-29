@@ -34,6 +34,11 @@ mkdirSync(build, { recursive: true });
 cpSync(addon, stage, { recursive: true, filter: src => !/(^|\/)\.[^/]+$/.test(src) && (dev || !src.endsWith('/content/dev.js')) });
 manifest.version = version;
 writeFileSync(join(stage, 'manifest.json'), JSON.stringify(manifest, null, 2) + '\n');
+// versioned stylesheet and script URLs: Zotero keeps chrome files cached across plugin updates
+for (const f of readdirSync(join(stage, 'content/ui')).filter(f => f.endsWith('.xhtml'))) {
+	const p = join(stage, 'content/ui', f);
+	writeFileSync(p, readFileSync(p, 'utf8').replaceAll('__VERSION__', encodeURIComponent(version + (dev ? '-dev' + Date.now() : ''))));
+}
 const out = join(build, `zotero-journal-crawler-${version}${dev ? '-dev' : ''}.xpi`);
 rmSync(out, { force: true });
 execFileSync('zip', ['-r', '-X', '-q', out, '.'], { cwd: stage, stdio: 'inherit' });

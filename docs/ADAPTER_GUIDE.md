@@ -32,7 +32,6 @@ earlier run:
 | `addon/content/lib/adapters/crossref.js` | article list from Crossref by ISSN (base of cambridge.js and mdpi.js) |
 | `addon/content/lib/adapters/{cambridge,mdpi,janeway,giappichelli}.js` | publisher platforms |
 | `addon/content/lib/adapters/<id>.js` | site-specific adapters |
-| `addon/content/lib/profiles.js` | known sites: address prefixes → adapter, params, notes (applied when such a journal is added or imported with only title and url) |
 | `test/harness.mjs` | runs an adapter in Node, without Zotero |
 
 The journal list itself is not part of the plugin: it is kept in the user's database and
@@ -125,8 +124,7 @@ Rules of thumb:
 ## Journal entry
 
 One entry of `"journals"` in the list file (with `scripts/config.mjs`, one file
-`journals/<slug>.json` in a configuration directory). A new site adapter should come with a
-profile in `profiles.js`, so that adding the journal by its address activates it:
+`journals/<slug>.json` in a configuration directory):
 
 ```json
 {

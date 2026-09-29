@@ -11,9 +11,8 @@ only fetches what is new.
 
 It knows the common publishing platforms — Open Journal Systems, Digital Commons (bepress),
 WordPress, Cambridge Core, MDPI, Janeway, any site with OAI-PMH or Crossref records — and has a
-configurable HTML crawler for hand-made sites. For a number of journals whose sites need
-dedicated rules, the plugin also ships a dedicated adapter and settings: they are applied
-automatically when you add one of those journals. The journal list itself starts empty.
+configurable HTML crawler for hand-made sites, plus dedicated adapters for a number of sites
+that need their own rules. The journal list itself starts empty.
 
 ## Install
 
@@ -28,8 +27,7 @@ Open the journals window from the button next to the search box of the items lis
 
 - **Importa JSON…** loads a list of journals with their settings, for instance one exported
   from another computer; **Esporta JSON…** saves yours. **Aggiungi rivista…** adds a single
-  journal: a known site gets its dedicated settings, otherwise the platform is recognized and
-  the settings proposed.
+  journal: the platform of the site is recognized and the settings proposed.
 - **Aggiorna tutte** looks for new articles in every enabled journal and imports them;
   **Aggiorna selezionate** does it for the checked (or selected) journals.
 - **Prova** lists what would be downloaded (up to 15 articles per journal) and checks the first PDF,
@@ -80,13 +78,11 @@ save from those sites.
       "params": { "base": "https://journals.example.edu/index.php/elr" },
       "enabled": true,
       "notes": "Free text shown in the window"
-    },
-    { "title": "A journal the plugin knows", "url": "https://www.example-known-journal.it" }
+    }
   ]
 }
 ```
 
-A journal given only with title and url gets the settings of the known site at that address.
 The adapters and their params are described in the window and in
 [docs/ADAPTER_GUIDE.md](docs/ADAPTER_GUIDE.md), which also explains how to write a site adapter.
 

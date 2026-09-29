@@ -1,4 +1,4 @@
-/* global Zotero, Services, JCDev, JCUtil, JCAdapters, JCResolver, JCStore, JCImporter, JCRunner, JCEvents, JCDetect, JCConfig, JCProfiles */
+/* global Zotero, Services, JCDev, JCUtil, JCAdapters, JCResolver, JCStore, JCImporter, JCRunner, JCEvents, JCDetect, JCConfig */
 
 var JournalCrawlerPlugin = {
 	WINDOW_URL: 'chrome://journal-crawler/content/ui/crawler.xhtml',
@@ -11,7 +11,7 @@ var JournalCrawlerPlugin = {
 		this.id = id;
 		this.version = version;
 		this.rootURI = rootURI;
-		for (let f of ['util', 'adapters', 'resolver', 'store', 'importer', 'runner', 'profiles', 'detect', 'htmlpdf', 'config']) {
+		for (let f of ['util', 'adapters', 'resolver', 'store', 'importer', 'runner', 'detect', 'htmlpdf', 'config']) {
 			Services.scriptloader.loadSubScript(rootURI + `content/lib/${f}.js`);
 		}
 		// platform adapters shipped with the plugin (list written by the build)
@@ -37,7 +37,6 @@ var JournalCrawlerPlugin = {
 			events: JCEvents,
 			detect: JCDetect,
 			config: JCConfig,
-			profiles: JCProfiles,
 		};
 
 		try {

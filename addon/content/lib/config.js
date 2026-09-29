@@ -1,4 +1,4 @@
-/* global JCStore, JCAdapters, JCProfiles */
+/* global JCStore, JCAdapters, JCDetect */
 /* exported JCConfig */
 
 /**
@@ -10,9 +10,6 @@
  *     "journals": [{ "slug", "title", "url", "adapter", "params", "enabled", "sinceYear",
  *                    "notes", "instructions", "survey" }, …]
  *   }
- *
- * Only title and url are required: a journal without adapter gets the settings of the known
- * site profile matching its url (profiles.js), if any.
  */
 var JCConfig = {
 	FORMAT: 'zotero-journal-crawler',
@@ -31,15 +28,11 @@ var JCConfig = {
 		if (!obj || !Array.isArray(obj.journals)) throw new Error('Il file non contiene un elenco "journals"');
 		if (obj.format && obj.format !== this.FORMAT) throw new Error(`Formato sconosciuto: ${obj.format}`);
 		let journals = obj.journals.map((j, i) => {
-			if (!j || !j.title) throw new Error(`Rivista n. ${i + 1}: manca il titolo`);
-			j = { ...j };
-			// a journal given only by title and url: settings of the known site, if any
-			if (!j.adapter) {
-				let profile = j.url && JCProfiles.find(j.url);
-				if (!profile) throw new Error(`«${j.title}»: manca "adapter" e il sito non è tra quelli noti`);
-				j = { ...profile, ...j, adapter: profile.adapter, params: { ...profile.params, ...(j.params || {}) } };
+			for (let k of ['title', 'adapter']) {
+				if (!j || !j[k]) throw new Error(`Rivista n. ${i + 1}: manca "${k}"`);
 			}
-			if (!j.slug) j.slug = JCProfiles.slugify(j.title);
+			j = { ...j };
+			if (!j.slug) j.slug = JCDetect.slugify(j.title);
 			if (!/^[a-z0-9][a-z0-9-]*$/.test(j.slug)) throw new Error(`Identificativo non valido: ${j.slug}`);
 			return j;
 		});

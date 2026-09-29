@@ -1,16 +1,12 @@
-/* global JCUtil, JCProfiles */
+/* global JCUtil */
 /* exported JCDetect */
 
 /**
- * Guess adapter and params for a journal the user adds: a known site (profiles.js), else OJS,
- * Digital Commons, WordPress; anything else gets the configurable crawler to be completed by hand.
+ * Guess adapter and params for a journal the user adds: OJS, Digital Commons, WordPress;
+ * anything else gets the configurable crawler to be completed by hand.
  */
 var JCDetect = {
 	async detect(ctx, url) {
-		let profile = typeof JCProfiles !== 'undefined' && JCProfiles.find(url);
-		if (profile) {
-			return { ...profile, notes: profile.notes || 'Sito noto: configurazione dedicata.', known: true };
-		}
 		let res = await ctx.request(url);
 		let html = res.text;
 		let final = res.url || url;
@@ -71,7 +67,7 @@ var JCDetect = {
 	},
 
 	slugify(title) {
-		return JCUtil.text(title).normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase()
+		return JCUtil.text(title).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 			.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || 'rivista';
 	},
 };

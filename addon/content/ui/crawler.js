@@ -327,9 +327,7 @@ var JCWindow = {
 			this.$('run-summary').textContent = 'Riconoscimento della piattaforma…';
 			let ctx = runner.makeContext({ id: 0, title: title.value, url: url.value, params: {}, state: {} }, { dryRun: true });
 			proposal = await detect.detect(ctx, url.value.trim());
-			this.$('run-summary').textContent = proposal.known
-				? `Sito noto: configurazione dedicata (${proposal.adapter}). Usa «Prova» per controllare.`
-				: `Riconosciuto: ${proposal.adapter}. Controlla i parametri e usa «Prova».`;
+			this.$('run-summary').textContent = `Riconosciuto: ${proposal.adapter}. Controlla i parametri e usa «Prova».`;
 		}
 		catch (e) {
 			this.$('run-summary').textContent = 'Sito non raggiungibile per il riconoscimento: configurare a mano. ' + e.message;
@@ -341,7 +339,7 @@ var JCWindow = {
 			adapter: proposal.adapter,
 			params: proposal.params,
 			notes: proposal.notes,
-			enabled: proposal.enabled !== false,
+			enabled: true,
 		}, { fromUser: true });
 		await this.reload();
 		this.select(id);

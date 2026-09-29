@@ -1,6 +1,6 @@
 {
   "name": "zotero-journal-crawler",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "Zotero plugin: downloads the articles of a list of open access journals into the library",
   "license": "MIT",

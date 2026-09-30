@@ -82,12 +82,25 @@ JCAdapters.register({
 				if (!title || /^fascicolo\s+n\.?\s*\d+/i.test(title) || skip.test(title)) continue;
 				found.add(url);
 				// author line: after the h2 (in .entry-meta or .description), before the h1 of the editorial
-				let h = a.closest('h1, h2');
+				// (pages rendered by the hidden browser may lack the heading around the link)
+				let h = a.closest('h1, h2') || a.parentElement;
 				let authorEl = null;
-				for (let sib of [h.nextElementSibling, h.previousElementSibling]) {
+				for (let sib of h ? [h.nextElementSibling, h.previousElementSibling] : []) {
 					let meta = sib && (sib.matches('.entry-meta') ? sib : sib.querySelector('.entry-meta'));
 					authorEl = meta && meta.querySelector('.post-author b, .post-author strong');
 					if (authorEl) break;
+				}
+				if (!authorEl) {
+					// the link itself carries the author: …&content_author=<b>Name</b>
+					let m = /[?&]content_auth(?:or)?=([^&]+)/i.exec(a.getAttribute('href') || '');
+					if (m) {
+						try {
+							let tmp = idoc.createElement('div');
+							tmp.innerHTML = decodeURIComponent(m[1].replace(/\+/g, ' '));
+							authorEl = tmp;
+						}
+						catch (e) {}
+					}
 				}
 				let authors = JCUtil.text(authorEl).replace(/\(a cura(?: di)?\)/i, '');
 				let creators = authors && !/^(osservatorio|redazione|federalismi)\b/i.test(authors) ? JCUtil.parseAuthors(authors) : [];
